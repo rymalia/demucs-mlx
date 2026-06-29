@@ -8,10 +8,14 @@ version = "0.1.0"
 description = "Music source separation with HTDemucs on Apple Silicon (MLX)"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.10"
+# Upper bound: librosa → numba → llvmlite lag new CPython releases
+# (no numba wheels for 3.14 yet). Relax the bound when numba supports it.
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "mlx>=0.17",
-    "numpy",
+    # Capped because librosa→numba pins numpy<2.3; without this, uv backtracks
+    # numba to an ancient version that fails to build. Relax when numba catches up.
+    "numpy<2.3",
     "torch",
     "soundfile",
     "pyyaml",
@@ -19,11 +23,8 @@ dependencies = [
     "librosa",
 ]
 
-[project.optional-dependencies]
-resample = ["librosa"]
-
 [project.scripts]
-demucs-mlx = "separate:main"
+demucs-mlx = "demucs_mlx.cli:main"
 
 [project.urls]
 Repository = "https://github.com/andrade0/demucs-mlx"
@@ -32,4 +33,4 @@ Repository = "https://github.com/andrade0/demucs-mlx"
 include = ["demucs_mlx*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.txt", "*.yaml"]
+demucs_mlx = ["remote/*.txt", "remote/*.yaml"]

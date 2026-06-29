@@ -28,29 +28,24 @@ Numerical accuracy: max difference vs PyTorch is **< 1 part per million** (0.8 �
 
 ## Quick start
 
-### 1. Set up a Python environment
+Demucs MLX requires **Python 3.10–3.13** (numba, a transitive dependency of `librosa`, doesn't support 3.14 yet).
 
-Demucs MLX requires **Python 3.10 or later**. We recommend a dedicated conda environment to avoid dependency conflicts (especially with PyTorch):
+### 1. Install
 
-```bash
-# Create and activate a conda environment
-conda create -n demucs python=3.11 -y
-conda activate demucs
-```
-
-> **No conda?** You can also use `python3 -m venv .venv && source .venv/bin/activate`. Just make sure `python --version` shows 3.10+.
-
-### 2. Install
+The easiest way is with [`uv`](https://docs.astral.sh/uv/). It builds an isolated environment, picks a compatible Python automatically, and puts `demucs-mlx` on your PATH:
 
 ```bash
+uv tool install git+https://github.com/andrade0/demucs-mlx.git
+
+# …or from a local clone:
 git clone https://github.com/andrade0/demucs-mlx.git
 cd demucs-mlx
-make install
+uv tool install .
 ```
 
-This installs all dependencies (MLX, PyTorch CPU, etc.) and puts the `demucs-mlx` command in your PATH (`~/.local/bin`).
+> **No uv?** `pipx install git+https://github.com/andrade0/demucs-mlx.git` works the same way. Or, for a plain pip install into your own environment: `pip install git+https://github.com/andrade0/demucs-mlx.git`.
 
-### 3. Separate a song
+### 2. Separate a song
 
 ```bash
 demucs-mlx song.mp3
@@ -58,10 +53,17 @@ demucs-mlx song.mp3
 
 The first run downloads the pretrained model (~80 MB, cached in `~/.cache/demucs_mlx/`). Output goes to `separated/htdemucs/<song>/` with 4 WAV files: `drums.wav`, `bass.wav`, `other.wav`, `vocals.wav`.
 
-> If you see a PATH warning during install, add this to your `~/.zshrc`:
-> ```bash
-> export PATH="$HOME/.local/bin:$PATH"
-> ```
+> If you see a PATH warning during install, run `uv tool update-shell` (or add `~/.local/bin` to your PATH), then restart your terminal.
+
+### Developing on the repo
+
+For local development with live code edits, use the Makefile, which creates a `.venv` via uv, installs the project in editable mode, and links a `demucs-mlx` shim into `~/.local/bin`:
+
+```bash
+git clone https://github.com/andrade0/demucs-mlx.git
+cd demucs-mlx
+make install      # see `make help` for venv / deps / uninstall targets
+```
 
 ### Usage
 
@@ -221,9 +223,9 @@ demucs-mlx song.mp3 -n htdemucs_6s
 ## Requirements
 
 - **macOS** with Apple Silicon (M1, M2, M3, or M4)
-- **Python 3.10+** (3.11 recommended)
+- **Python 3.10–3.13** (3.14 not yet supported — `librosa`→`numba` has no 3.14 wheels)
 - **RAM**: 8 GB minimum, 16 GB+ recommended for long tracks without chunking
-- A conda or virtual environment (recommended to avoid dependency conflicts)
+- [`uv`](https://docs.astral.sh/uv/) or `pipx` recommended for an isolated install (avoids dependency conflicts)
 
 ### Dependencies
 
@@ -246,21 +248,23 @@ Optional: `librosa` (only needed if your input audio isn't 44.1 kHz — it handl
 
 ```
 demucs-mlx/
-├── Makefile                 # make install / make uninstall
-├── separate.py              # CLI entry point
-├── demucs_mlx/
-│   ├── htdemucs.py          # Main model (hybrid U-Net + transformer)
-│   ├── hdemucs.py           # Encoder/decoder layers
-│   ├── transformer.py       # Cross-attention transformer
-│   ├── demucs.py            # DConv residual branches
-│   ├── apply.py             # Inference pipeline (chunking, shifts)
-│   ├── pretrained.py        # Model download & weight loading
-│   ├── weight_convert.py    # PyTorch → MLX weight conversion
-│   ├── spec.py              # STFT/iSTFT bridge
-│   └── utils.py             # Tensor utilities
-└── remote/                  # Model download configs
-    ├── files.txt
-    └── htdemucs.yaml
+├── Makefile                 # editable dev install (make install / help)
+├── pyproject.toml           # package metadata + `demucs-mlx` entry point
+└── demucs_mlx/
+    ├── cli.py               # CLI entry point (demucs-mlx / python -m demucs_mlx)
+    ├── __main__.py          # enables `python -m demucs_mlx`
+    ├── htdemucs.py          # Main model (hybrid U-Net + transformer)
+    ├── hdemucs.py           # Encoder/decoder layers
+    ├── transformer.py       # Cross-attention transformer
+    ├── demucs.py            # DConv residual branches
+    ├── apply.py             # Inference pipeline (chunking, shifts)
+    ├── pretrained.py        # Model download & weight loading
+    ├── weight_convert.py    # PyTorch → MLX weight conversion
+    ├── spec.py              # STFT/iSTFT bridge
+    ├── utils.py             # Tensor utilities
+    └── remote/              # Model download configs (shipped in the wheel)
+        ├── files.txt
+        └── htdemucs.yaml
 ```
 
 ## License

@@ -1,5 +1,5 @@
 mlx>=0.17
-numpy
+numpy<2.3
 torch
 soundfile
 pyyaml
